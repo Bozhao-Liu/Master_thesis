@@ -108,14 +108,14 @@ def add_AUC_to_ROC(args, cv_iter, evalmatices):
 	plt.annotate('Average Cutoff {:.4f}'.format(np.mean(np.array(evalmatices).T[2])),(0.9, 0.2))
 	plt.savefig(ROC_png_file)
 
-def plot_learningCurve(args, cv_iter, AUCs):
+def plot_learningCurve(args, cv_iter, data):
 	plt.clf()
 	learningCurveFile = '{network}_{loss}_CV{cv_iter}_LearningCurve.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter)
-	for i in range(len(AUCs)):
-		plt.plot(AUCs[i])
-	plt.ylabel('AUC')
+	for i in range(len(data)):
+		plt.plot(data[i])
+	plt.ylabel('loss')
 	plt.xlabel('Epochs')
-	plt.title('{}_{} ROC on Test, {} fold'.format(args.network, args.loss, cv_iter))
+	plt.title('{}_{} Learning Curve, {} fold'.format(args.network, args.loss, cv_iter))
 	logging.warning('    Saving Learning Curve to {}\n'.format(learningCurveFile))
 	plt.savefig(learningCurveFile)
 
@@ -138,7 +138,7 @@ def get_AUC(output):
 	return output[0], AUC
 
 def plot_AUD_SD(loss, evalmatices, netlist):
-	logging.warning('Creating standard diviation image for {} \n'.format('-'.join(netlist)))
+	logging.warning('    Creating standard diviation image for {}'.format('-'.join(netlist)))
 	AUC_png_file = 'Crossvalidation_Analysis_{}_{}.PNG'.format(loss, '_'.join(netlist))
 
 	if len(netlist) == 0:
@@ -177,7 +177,7 @@ def plot_AUD_SD(loss, evalmatices, netlist):
 	ax[2].set_xticklabels(netlist, fontsize=10)
 
 	plt.xlabel('Network name')
-	logging.warning('Saving standard diviation image for {} \n'.format('-'.join(netlist)))
+	logging.warning('    Saving standard diviation image for {} \n'.format('-'.join(netlist)))
 	plt.savefig(AUC_png_file)
 
 

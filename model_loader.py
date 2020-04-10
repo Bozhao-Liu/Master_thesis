@@ -63,8 +63,9 @@ def loadSmallResNet():
     print("Loading SmallResNet")
     return smallresnet(num_classes=1)
 
-def weight_reset(m):
-    if isinstance(m, nn.Linear):
+def weight_ini(m):
+    torch.manual_seed(230)
+    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
         m.reset_parameters()
     
 

@@ -52,19 +52,19 @@ def train_model(args, params, loss_fn, model, CViter, network):
 
 	logging.info("fetch_dataloader")
 	dataloaders = fetch_dataloader(['train', 'val'], params) 
-	AUC_track = []
+	loss_track = []
 
 	for epoch in range(start_epoch, start_epoch + params.epochs):
 		logging.warning('CV [{}/{},{}/{}], Training Epoch: [{}/{}]'.format(CViter[1] + 1, params.CV_iters-1, CViter[0] + 1, params.CV_iters, epoch+1, start_epoch + params.epochs))
 
 		now = datetime.now()
-		train(dataloaders['train'], model, loss_fn, optimizer, epoch)
+		loss_track = loss_track + train(dataloaders['train'], model, loss_fn, optimizer, epoch) #keep track of training loss
 		save_TimeTrack_to_ini(args, datetime.now() - now, len(dataloaders['train'])) #save time used to evalutate loss function#
 
 		# evaluate on validation set
 		val_loss, AUC = get_AUC(validate(dataloaders['val'], model, loss_fn))
 		logging.warning('    Loss {loss:.4f};  AUC {AUC:.4f}\n'.format(loss=val_loss, AUC=AUC))
-		AUC_track.append(AUC)
+
 		# remember best loss and save checkpoint		
 		if best_AUC < AUC:
 			logging.warning('    Saving Best AUC model\n')
@@ -77,7 +77,7 @@ def train_model(args, params, loss_fn, model, CViter, network):
 		best_AUC = max(best_AUC, AUC)
 	gc.collect()
 	del optimizer
-	return AUC_track
+	return loss_track
 	
 
 def train(train_loader, model, loss_fn, optimizer, epoch):
@@ -85,7 +85,7 @@ def train(train_loader, model, loss_fn, optimizer, epoch):
 
 	# switch to train mode
 	model.train()
-
+	loss = []
 	from tqdm import tqdm
 	
 	with tqdm(total=len(train_loader)) as t:
@@ -105,6 +105,8 @@ def train(train_loader, model, loss_fn, optimizer, epoch):
 			cost = loss_fn(output, label_var, (1, 1))
 			assert not isnan(cost.cpu().data.numpy()),  "Gradient exploding, Loss = {}".format(cost.cpu().data.numpy())
 			losses.update(cost.cpu().data.numpy(), len(datas))
+			if (i+45)%50 == 0:
+				loss.append(losses())
 
 			# compute gradient and do SGD step
 			logging.info("        Compute gradient and do SGD step")
@@ -115,6 +117,7 @@ def train(train_loader, model, loss_fn, optimizer, epoch):
 			gc.collect()
 			t.set_postfix(loss='{:05.3f}'.format(losses()))
 			t.update()
+	return loss
 	
 
 def validate(val_loader, model, loss_fn):
@@ -142,7 +145,7 @@ def validate(val_loader, model, loss_fn):
 		# measure record cost
 		losses.update(loss.cpu().data.numpy(), len(datas))
 	
-	return losses.sum, outputs
+	return losses(), outputs
 
 
 def main():
@@ -164,24 +167,24 @@ def main():
 
 		cudnn.benchmark = True
 
-		AUCs = []
+		losses = []
 		for Testiter in range(params.CV_iters):
 			for CViter in range(params.CV_iters-1):
+				model.apply(model_loader.weight_ini)
 				logging.warning('Cross Validation on iteration {}/{}, Nested CV on {}/{}'.format(Testiter + 1, params.CV_iters, CViter + 1, params.CV_iters -1))
 				if args.train:
-					AUCs.append(train_model(args, params, loss_fn, model, (Testiter,CViter), network))
+					losses.append(train_model(args, params, loss_fn, model, (Testiter,CViter), network))
 				evalmatices[network].append(save_ROC(	args, 
 								params.CV_iters, 
 								outputs = validate(	fetch_dataloader([], params), 
 											resume_model(args, model, (Testiter,CViter)), 
 											loss_fn)[1]))
 				get_next_CV_set(params.CV_iters)
-				model.apply(model_loader.weight_reset)
 
 		#add the AUC SD to the current model result
 		add_AUC_to_ROC(args, params.CV_iters, evalmatices[network])
 		if args.train:		
-			plot_learningCurve(args, params.CV_iters, AUCs)
+			plot_learningCurve(args, params.CV_iters, losses)
 		Store_AUC_to_ini(args, evalmatices[network])
 	
 	plot_AUD_SD(args.loss, evalmatices, netlist)

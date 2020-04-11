@@ -1,10 +1,10 @@
 {
-    "learning_rate": 5e-5,
-    "batch_size": 50,
-    "epochs": 30,
+    "learning_rate": 3e-6,
+    "batch_size": 30,
+    "epochs": 20,
     "dropout_rate":0.8, 
     "num_workers": 4,
-    "CV_iters": 7,
+    "CV_iters": 5,
     "weight_decay": 5e-4,
     "version": 121
 }

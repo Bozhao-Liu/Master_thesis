@@ -39,19 +39,7 @@ print(img.size())
 img = resize2d(img, (224,224))
 print(img.size())'''
 
-from datetime import datetime
-import pandas 
-now = datetime.now()
-for i in range(10009):
-	n = 0
-t = datetime.now()-now
-now = datetime.now()
-t = str(t)
-print(t)
-t = pandas.to_timedelta(t)
-print(t)
-a = datetime.now()-now + t
-print(a)
+import numpy as np
 
-t = pandas.to_timedelta('0')
-print(t)
+x = np.array([[1,2,3],[4,5,6]])
+print('{}'.format(x.shape))

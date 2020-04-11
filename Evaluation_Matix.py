@@ -111,6 +111,7 @@ def add_AUC_to_ROC(args, cv_iter, evalmatices):
 def plot_learningCurve(args, cv_iter, data):
 	plt.clf()
 	learningCurveFile = '{network}_{loss}_CV{cv_iter}_LearningCurve.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter)
+
 	for i in range(len(data)):
 		plt.plot(data[i])
 	plt.ylabel('loss')

@@ -100,12 +100,11 @@ def train(train_loader, model, loss_fn, optimizer, epoch):
 			logging.info("        Compute output")
 			output = model(input_var).double()
 
-
 			# measure record cost
 			cost = loss_fn(output, label_var, (1, 1))
 			assert not isnan(cost.cpu().data.numpy()),  "Gradient exploding, Loss = {}".format(cost.cpu().data.numpy())
 			losses.update(cost.cpu().data.numpy(), len(datas))
-			if (i+45)%50 == 0:
+			if (i+7)%10 == 0:
 				loss.append(losses())
 
 			# compute gradient and do SGD step
@@ -172,6 +171,7 @@ def main():
 			for CViter in range(params.CV_iters-1):
 				model.apply(model_loader.weight_ini)
 				logging.warning('Cross Validation on iteration {}/{}, Nested CV on {}/{}'.format(Testiter + 1, params.CV_iters, CViter + 1, params.CV_iters -1))
+				
 				if args.train:
 					losses.append(train_model(args, params, loss_fn, model, (Testiter,CViter), network))
 				evalmatices[network].append(save_ROC(	args, 

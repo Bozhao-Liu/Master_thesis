@@ -1,3 +1,6 @@
+
 *.tar
 *.log
 *.pyc
+*.png
+

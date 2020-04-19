@@ -52,18 +52,18 @@ class ResNet(nn.Module):
     def __init__(self, num_classes=1000):
         super(ResNet, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=7, stride=2, padding=3, bias=False),  #224*224 -> 112*112
+            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=7, stride=2, padding=3, bias=False),  #256*256 -> 128*128
             nn.BatchNorm2d(num_features=64),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),                                           #112*112 -> 56*56
-            IdentityBlock(in_channels=64, out_channels=256, kernel_size=5),                             #56*56 -> 28*28
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),                                           #128*128 -> 64*64
+            IdentityBlock(in_channels=64, out_channels=256, kernel_size=5),                             #64*64 -> 32*32
             nn.BatchNorm2d(num_features=256),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),                                           #28*28 -> 14*14
-            IdentityBlock(in_channels=256, out_channels=512, kernel_size=7),                            #14*14 -> 7*7
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),                                           #32*32 -> 16*16
+            IdentityBlock(in_channels=256, out_channels=512, kernel_size=7),                            #16*16 -> 8*8
             nn.BatchNorm2d(num_features=512),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=1),                                                      #6*6 -> 4*4
+            nn.MaxPool2d(kernel_size=3, stride=1),                                                      #8*8 -> 4*4
             nn.Conv2d(512, 512, kernel_size=3, stride=1),                                               #4*4 -> 2*2
             nn.BatchNorm2d(num_features=512),
             nn.ReLU(inplace=True),
@@ -93,10 +93,4 @@ class resize(nn.Module):
         return x  
 
 def smallresnet(num_classes = 1, **kwargs):
-    r"""AlexNet model architecture from the
-    `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
     return nn.Sequential(resize(), ResNet(num_classes, **kwargs))

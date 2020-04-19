@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import sys
@@ -50,25 +49,6 @@ class AlexNet(nn.Module):
         x = x.view(x.size(0), 256 * 6 * 6)
         x = self.classifier(x)
         return x
-    
-class Post_AlexNet(nn.Module):
-    def __init__(self, AlexnetClass = 1000, num_classes = 2):
-        super(Post_AlexNet, self).__init__()
-        self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(AlexnetClass, 50),
-            nn.BatchNorm1d(50),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(50, 50),
-            nn.BatchNorm1d(50),
-            nn.ReLU(inplace=True),
-            nn.Linear(50, num_classes),
-        )
-    def forward(self, x):
-        x = self.classifier(x)
-        x = torch.sigmoid(x)
-        return x
 
 class resize(nn.Module):
     def __init__(self):
@@ -85,13 +65,12 @@ def alexnet(pretrained=False, progress=True, num_classes = 1, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = AlexNet(**kwargs)
+    model = AlexNet(num_classes = 1)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['alexnet'],
                                               progress=progress)
         model.load_state_dict(state_dict)
     model.features[0] = nn.Conv2d(1, 64, kernel_size=11, stride=4, padding=2)
-    Post_model = Post_AlexNet( num_classes = num_classes)
-    model = nn.Sequential(model, Post_model)
+    model = nn.Sequential(model, nn.Sigmoid())
     model = nn.Sequential(resize(), model)
     return model

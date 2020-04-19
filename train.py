@@ -166,14 +166,14 @@ def main():
 
 		cudnn.benchmark = True
 
-		losses = []
 		for Testiter in range(params.CV_iters):
 			for CViter in range(params.CV_iters-1):
 				model.apply(model_loader.weight_ini)
 				logging.warning('Cross Validation on iteration {}/{}, Nested CV on {}/{}'.format(Testiter + 1, params.CV_iters, CViter + 1, params.CV_iters -1))
 				
 				if args.train:
-					losses.append(train_model(args, params, loss_fn, model, (Testiter,CViter), network))
+					save_loss_log(args, (Testiter,CViter), 
+							train_model(args, params, loss_fn, model, (Testiter,CViter), network))
 				evalmatices[network].append(save_ROC(	args, 
 								params.CV_iters, 
 								outputs = validate(	fetch_dataloader([], params), 
@@ -182,9 +182,8 @@ def main():
 				get_next_CV_set(params.CV_iters)
 
 		#add the AUC SD to the current model result
-		add_AUC_to_ROC(args, params.CV_iters, evalmatices[network])
-		if args.train:		
-			plot_learningCurve(args, params.CV_iters, losses)
+		add_AUC_to_ROC(args, params.CV_iters, evalmatices[network])	
+		plot_learningCurve(args, params.CV_iters)
 		Store_AUC_to_ini(args, evalmatices[network])
 	
 	plot_AUD_SD(args.loss, evalmatices, netlist)

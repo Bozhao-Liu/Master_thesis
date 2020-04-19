@@ -196,25 +196,7 @@ def densenet201(pretrained=False, progress=True, **kwargs):
     """
     return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
                      **kwargs)
-    
-class Post_DenseNet(nn.Module):
-    def __init__(self, DensenetClass = 1000, num_classes = 2):
-        super(Post_DenseNet, self).__init__()
-        self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(DensenetClass, 50),
-            nn.BatchNorm1d(50),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(50, 50),
-            nn.BatchNorm1d(50),
-            nn.ReLU(inplace=True),
-            nn.Linear(50, num_classes),
-        )
-    def forward(self, x):
-        x = self.classifier(x)
-        x = torch.sigmoid(x)
-        return x
+
 
 class resize(nn.Module):
     def __init__(self):
@@ -226,28 +208,26 @@ class resize(nn.Module):
 
 def net(version, pretrained=False, progress=True, num_classes = 1, **kwargs):
     if version == '121':
-        model = densenet121(pretrained=pretrained)
+        model = densenet121(pretrained=pretrained, num_classes = num_classes)
         model.features[0]= nn.Conv2d(1, 64, kernel_size=7, stride=2,
                                 padding=3, bias=False)
     elif version == '161':
-        model = densenet161(pretrained=pretrained)
+        model = densenet161(pretrained=pretrained, num_classes = num_classes)
         model.features[0]= nn.Conv2d(1, 96, kernel_size=7, stride=2,
                                 padding=3, bias=False)
     elif version == '169':
-        model = densenet169(pretrained=pretrained)
+        model = densenet169(pretrained=pretrained, num_classes = num_classes)
         model.features[0]= nn.Conv2d(1, 64, kernel_size=7, stride=2,
                                 padding=3, bias=False)
     elif version == '201':
-        model = densenet201(pretrained=pretrained)
+        model = densenet201(pretrained=pretrained, num_classes = num_classes)
         model.features[0]= nn.Conv2d(1, 64, kernel_size=7, stride=2,
                                 padding=3, bias=False)
     else:
         print('No DenseNet version found with {}'.format(version))
         sys.exit()
-    #load model and rewrite the first layer to fit grayscale
-    Post_model = Post_DenseNet( num_classes = num_classes)
     
-    model = nn.Sequential(model, Post_model)
+    model = nn.Sequential(model, nn.Sigmoid())
     model = nn.Sequential(resize(), model)
     return model
     

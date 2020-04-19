@@ -41,5 +41,14 @@ print(img.size())'''
 
 import numpy as np
 
-x = np.array([[1,2,3],[4,5,6]])
-print('{}'.format(x.shape))
+net = 'AlexNet_BCE'
+data = [1,1,1,1,1,1,1]
+a_file = open("test.txt", "w")
+np.savetxt(a_file, data)
+
+a_file.close()
+
+original_array = np.loadtxt("test.txt")
+print(original_array)
+	
+

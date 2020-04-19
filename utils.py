@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import torch
+import numpy as np
 try:
     from torch.hub import load_state_dict_from_url
 except ImportError:
@@ -190,7 +191,6 @@ def save_TimeTrack_to_ini(args, timeused, iters):
 	config.set(args.network, args.loss+ '.time_per_minibatch', str(timelog/iters))
 
 	config.write(open(config_name, 'w+'))
-	return 0
 
 def Store_AUC_to_ini(args, evalmatices):
 	import numpy as np
@@ -216,3 +216,23 @@ def Store_AUC_to_ini(args, evalmatices):
 
 	config.write(open(config_name, 'w+'))
 	return 0
+
+def save_loss_log(args, CViter, data):
+	loss_log = os.path.join(args.model_dir, args.network)
+	loss_log = os.path.join(loss_log, 'LossLog')
+	if not os.path.isdir(loss_log):
+		os.mkdir(loss_log)
+	loss_log = os.path.join(loss_log, '{network}_{loss}_{cv_iter}.txt'.format(network = args.network, loss = args.loss, cv_iter = '_'.join(tuple(map(str, CViter)))))
+	if os.path.isfile(loss_log):
+		os.remove(loss_log)
+	with open(loss_log, "w") as log_file:
+    		np.savetxt(log_file, data)
+
+def load_loss_log(args, CViter):
+	loss_log = os.path.join(args.model_dir, args.network)
+	loss_log = os.path.join(loss_log, 'LossLog')
+	assert os.path.isdir(loss_log), 'No dirctory with name {}'.format(loss_log)
+
+	loss_log = os.path.join(loss_log, '{network}_{loss}_{cv_iter}.txt'.format(network = args.network, loss = args.loss, cv_iter = '_'.join(tuple(map(str, CViter)))))
+	assert os.path.isfile(loss_log), 'Cannot find Loss Log file {}'.format(loss_log)
+	return np.loadtxt(loss_log)

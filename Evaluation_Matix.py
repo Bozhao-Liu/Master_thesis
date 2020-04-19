@@ -6,6 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
+from utils import load_loss_log
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
     def __init__(self):
@@ -37,7 +39,7 @@ def Exp_UEW_BCE_loss(outputs, labels, weights = (1, 1)):
 	'''
 	Cross entropy loss with uneven weigth between positive and negative result, add exponential function to positive to manually adjust precision and recall
 	'''
-	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],torch.pow(outputs[:, i], - 1) - 1), -weights[1]*torch.mul(1 - labels[:, i],torch.log(1 - outputs[:, i])))) for i in range(outputs.shape[1])]
+	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],1.0/outputs[:, i] - 1), -weights[1]*torch.mul(1 - labels[:, i],1.0/(1 - outputs[:, i])-1))) for i in range(outputs.shape[1])]
 	return torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
 
 def Focal_loss(outputs, labels, gamma = (2, 2)):
@@ -62,7 +64,8 @@ def get_loss(loss_name):
 		sys.exit()
 
 def save_ROC(args, cv_iter, outputs):
-	ROC_png_file = '{network}_{loss}_CV{cv_iter}_ROC.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter)
+	ROC_png_file = os.path.join(args.model_dir, args.network)
+	ROC_png_file = os.path.join(ROC_png_file, '{network}_{loss}_CV{cv_iter}_ROC.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter))
 	AUC = 0
 	TP_rates = []
 	FP_rates = []
@@ -101,22 +104,24 @@ def save_ROC(args, cv_iter, outputs):
 	return [AUC, best_F1, best_cutoff]
 
 def add_AUC_to_ROC(args, cv_iter, evalmatices):
-	ROC_png_file = '{network}_{loss}_CV{cv_iter}_ROC.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter)
+	ROC_png_file = os.path.join(args.model_dir, args.network)
+	ROC_png_file = os.path.join(ROC_png_file, '{network}_{loss}_CV{cv_iter}_ROC.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter))
 	logging.warning('    adding AUC to ROC {}\n'.format(ROC_png_file))
 	plt.boxplot([np.array(evalmatices).T[0]], showfliers=False)
 	plt.annotate('Average F1 {:.4f}'.format(np.mean(np.array(evalmatices).T[1])),(0.9, 0.1))
 	plt.annotate('Average Cutoff {:.4f}'.format(np.mean(np.array(evalmatices).T[2])),(0.9, 0.2))
 	plt.savefig(ROC_png_file)
 
-def plot_learningCurve(args, cv_iter, data):
+def plot_learningCurve(args, CV_iters):
 	plt.clf()
-	learningCurveFile = '{network}_{loss}_CV{cv_iter}_LearningCurve.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter)
-
-	for i in range(len(data)):
-		plt.plot(data[i])
+	learningCurveFile = os.path.join(args.model_dir, args.network)
+	learningCurveFile = os.path.join(learningCurveFile, '{network}_{loss}_CV{cv_iter}_LearningCurve.PNG'.format(network = args.network, loss = args.loss, cv_iter = CV_iters))
+	for Testiter in range(CV_iters):
+		for CViter in range(CV_iters-1):
+			plt.plot(load_loss_log(args, (Testiter,CViter)))
 	plt.ylabel('loss')
 	plt.xlabel('Epochs')
-	plt.title('{}_{} Learning Curve, {} fold'.format(args.network, args.loss, cv_iter))
+	plt.title('{}_{} Learning Curve, {} fold'.format(args.network, args.loss, CV_iters))
 	logging.warning('    Saving Learning Curve to {}\n'.format(learningCurveFile))
 	plt.savefig(learningCurveFile)
 

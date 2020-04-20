@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from utils import load_loss_log
+epslon = 1e-8
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -32,19 +33,19 @@ def UnevenWeightBCE_loss(outputs, labels, weights = (1, 1)):
 	'''
 	Cross entropy loss with uneven weigth between positive and negative result to manually adjust precision and recall
 	'''
-	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],torch.log(outputs[:, i])), weights[1]*torch.mul(1 - labels[:, i],torch.log(1 - outputs[:, i])))) for i in range(outputs.shape[1])]
+	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],torch.log(outputs[:, i]+epslon)), weights[1]*torch.mul(1 - labels[:, i],torch.log(1 - outputs[:, i]+epslon)))) for i in range(outputs.shape[1])]
 	return torch.neg(torch.stack(loss, dim=0).sum(dim=0).sum(dim=0))
 
 def Exp_UEW_BCE_loss(outputs, labels, weights = (1, 1)):
 	'''
 	Cross entropy loss with uneven weigth between positive and negative result, add exponential function to positive to manually adjust precision and recall
 	'''
-	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],1.0/outputs[:, i] - 1), -weights[1]*torch.mul(1 - labels[:, i],1.0/(1 - outputs[:, i])-1))) for i in range(outputs.shape[1])]
+	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],1.0/(outputs[:, i]+epslon) - 1), weights[1]*torch.mul(1 - labels[:, i],1.0/(1 - outputs[:, i]+epslon)-1))) for i in range(outputs.shape[1])]
 	return torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
 
 def Focal_loss(outputs, labels, gamma = (2, 2)):
-	loss = [torch.sum(torch.add(	torch.mul(torch.pow(1 - outputs[:, i], gamma[0]), torch.mul(labels[:, i], torch.log(outputs[:, i]))), 
-					torch.mul(torch.pow(outputs[:, i], gamma[1]), torch.mul(1 - labels[:, i], torch.log(1 - outputs[:, i]))))) for i in range(outputs.shape[1])]
+	loss = [torch.sum(torch.add(	torch.mul(torch.pow(1 - outputs[:, i], gamma[0]), torch.mul(labels[:, i], torch.log(outputs[:, i]+epslon))), 
+					torch.mul(torch.pow(outputs[:, i], gamma[1]), torch.mul(1 - labels[:, i], torch.log(1 - outputs[:, i]+epslon))))) for i in range(outputs.shape[1])]
 	return -torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
 
 def get_loss(loss_name):

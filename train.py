@@ -104,7 +104,7 @@ def train(train_loader, model, loss_fn, optimizer, epoch):
 			cost = loss_fn(output, label_var, (1, 1))
 			assert not isnan(cost.cpu().data.numpy()),  "Gradient exploding, Loss = {}".format(cost.cpu().data.numpy())
 			losses.update(cost.cpu().data.numpy(), len(datas))
-			if (i+7)%10 == 0:
+			if (i+2)%5 == 0:
 				loss.append(losses())
 
 			# compute gradient and do SGD step

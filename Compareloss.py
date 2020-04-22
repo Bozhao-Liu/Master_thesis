@@ -32,6 +32,8 @@ parser.add_argument('--network', type=str, default = '',
 			help='select network to train on. leave it blank means train on all model')
 parser.add_argument('--log', default='warning', type=str,
 			help='set logging level')
+parser.add_argument('--lrDecay', default=0.8, type=float,
+			help='learning rate decay rate')
 
 	
 
@@ -81,21 +83,24 @@ def main():
 
 	cudnn.benchmark = True
 	for loss in loss_list:
+		args.loss = loss
 		loss_fn = get_loss(loss)
+		if args.lrDecay != 1.0:
+			args.loss = args.loss + '_{}LrD_'.format(str(args.lrDecay))
 		for Testiter in range(params.CV_iters):
 			for CViter in range(params.CV_iters-1):
 				if CViter !=0 or Testiter !=0:
 					model.apply(model_loader.weight_ini)
 					logging.warning('Cross Validation on iteration {}/{}, Nested CV on {}/{}'.format(Testiter + 1, params.CV_iters, CViter + 1, params.CV_iters -1))
 					
-					evalmatices[network].append(get_eval_matrix(	args, 
+					evalmatices[loss].append(get_eval_matrix(	args, 
 									params.CV_iters, 
 									outputs = validate(	fetch_dataloader([], params), 
 												resume_model(args, model, (Testiter,CViter)), 
 												loss_fn)[1]))
 					get_next_CV_set(params.CV_iters)
 	
-	plot_AUC_SD(args.loss, evalmatices, loss_list)
+	plot_AUC_SD(args.network, evalmatices, loss_list)
 
 		
 if __name__ == '__main__':

@@ -80,14 +80,14 @@ def get_loss(loss_name):
 		logging.warning("loss function List:")
 		logging.warning("    BCE")
 		logging.warning("    EXP_BCE")
-		logging.warning("    Focal")
+		logging.warning("    focal")
 		logging.warning("    EXPBCE_Focal_Balanced")
 		logging.warning("    EXPBCE_BCE_Balanced")
 		import sys
 		sys.exit()
 
 def get_loss_list():
-	return ['BCE','EXP_BCE','Focal','EXPBCE_Focal_Balanced','EXPBCE_BCE_Balanced']
+	return ['BCE','EXP_BCE','focal','EXPBCE_Focal_Balanced','EXPBCE_BCE_Balanced']
 
 def save_ROC(args, cv_iter, outputs):
 	ROC_png_file = os.path.join(args.model_dir, args.network)

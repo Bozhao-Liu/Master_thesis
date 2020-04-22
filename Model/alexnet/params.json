@@ -1,7 +1,7 @@
 {
     "learning_rate": 5e-6,
     "batch_size": 1000,
-    "epochs": 13,
+    "epochs": 14,
     "dropout_rate":0.5, 
     "num_workers": 4,
     "CV_iters": 5,

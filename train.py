@@ -38,6 +38,8 @@ parser.add_argument('--loss', type=str, default = 'BCE',
 			help='select loss function to train with. ')
 parser.add_argument('--log', default='warning', type=str,
 			help='set logging level')
+parser.add_argument('--lrDecay', default=0.8, type=float,
+			help='learning rate decay rate')
 
 
 def train_model(args, params, loss_fn, model, CViter, network):
@@ -73,9 +75,14 @@ def train_model(args, params, loss_fn, model, CViter, network):
 				'optimizer' : optimizer.state_dict(),
 				}, args, CViter)
 		best_AUC = max(best_AUC, AUC)
+		learning_rate_decay(optimizer, args.lrDecay)
 	gc.collect()
 	del optimizer
 	return loss_track
+
+def learning_rate_decay(optimizer, decay_rate):
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = param_group['lr'] * decay_rate
 	
 
 def train(args, train_loader, model, loss_fn, optimizer, epoch):
@@ -152,13 +159,15 @@ def main():
 	
 	# define loss function
 	loss_fn = get_loss(args.loss)
+	if args.lrDecay != 1.0:
+		args.loss = args.loss + '_{}LrD_'.format(str(args.lrDecay))
 	netlist = model_loader.get_model_list(args.network)
 	for network in netlist:
 		plt.clf()
 		args.network = network
 		set_logger(args.model_dir, args.network, args.log)
 
-		params = set_params(args.model_dir, args.network)
+		params = set_params(args.model_dir, network)
 		
 		model = model_loader.loadModel(params, netname = args.network, dropout_rate = params.dropout_rate)
 		model.cuda()

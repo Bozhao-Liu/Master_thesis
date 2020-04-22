@@ -1,5 +1,5 @@
-python3 Compareloss.py  --network basemodel
-python3 Compareloss.py  --network AlexNet
-python3 Compareloss.py  --network DenseNet
-python3 Compareloss.py  --network SmallResNet
+#python3 Compareloss.py  --network basemodel
+python3 Compareloss.py  --network alexnet --lrDecay 1.0
+#python3 Compareloss.py  --network densenet
+#python3 Compareloss.py  --network smallresnet --lrDecay 1.0
 

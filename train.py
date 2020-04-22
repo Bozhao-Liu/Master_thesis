@@ -186,7 +186,7 @@ def main():
 		plot_learningCurve(args, params.CV_iters)
 		Store_AUC_to_ini(args, evalmatices[network])
 	
-	plot_AUD_SD(args.loss, evalmatices, netlist)
+	plot_AUC_SD(args.loss, evalmatices, netlist)
 
 		
 if __name__ == '__main__':

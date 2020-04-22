@@ -41,14 +41,12 @@ print(img.size())'''
 
 import numpy as np
 
-net = 'AlexNet_BCE'
-data = [1,1,1,1,1,1,1]
-a_file = open("test.txt", "w")
-np.savetxt(a_file, data)
 
-a_file.close()
 
 original_array = np.loadtxt("test.txt")
-print(original_array)
+
+import matplotlib.pyplot as plt
+plt.plot(original_array)
+plt.show()
 	
 

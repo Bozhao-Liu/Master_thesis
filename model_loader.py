@@ -65,7 +65,7 @@ def loadSmallResNet():
 
 def weight_ini(m):
     torch.manual_seed(230)
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d) or isinstance(m, nn.BatchNorm2d):
         m.reset_parameters()
     
 

@@ -13,7 +13,7 @@ from utils import *
 import model_loader
 from data_loader import fetch_dataloader, get_next_CV_set
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 from datetime import datetime
 
 def str2bool(v):
@@ -57,9 +57,7 @@ def train_model(args, params, loss_fn, model, CViter, network):
 	for epoch in range(start_epoch, start_epoch + params.epochs):
 		logging.warning('CV [{}/{},{}/{}], Training Epoch: [{}/{}]'.format(CViter[1] + 1, params.CV_iters-1, CViter[0] + 1, params.CV_iters, epoch+1, start_epoch + params.epochs))
 
-		now = datetime.now()
-		loss_track = loss_track + train(dataloaders['train'], model, loss_fn, optimizer, epoch) #keep track of training loss
-		save_TimeTrack_to_ini(args, datetime.now() - now, len(dataloaders['train'])) #save time used to evalutate loss function#
+		loss_track = loss_track + train(args, dataloaders['train'], model, loss_fn, optimizer, epoch) #keep track of training loss
 
 		# evaluate on validation set
 		val_loss, AUC = get_AUC(validate(dataloaders['val'], model, loss_fn))
@@ -80,14 +78,13 @@ def train_model(args, params, loss_fn, model, CViter, network):
 	return loss_track
 	
 
-def train(train_loader, model, loss_fn, optimizer, epoch):
+def train(args, train_loader, model, loss_fn, optimizer, epoch):
 	losses = AverageMeter()
 
 	# switch to train mode
 	model.train()
 	loss = []
-	from tqdm import tqdm
-	
+	now = datetime.now()
 	with tqdm(total=len(train_loader)) as t:
 		for i, (datas, label) in enumerate(train_loader):
 			logging.info("    Sample {}:".format(i))
@@ -101,10 +98,10 @@ def train(train_loader, model, loss_fn, optimizer, epoch):
 			output = model(input_var).double()
 
 			# measure record cost
-			cost = loss_fn(output, label_var, (1, 1))
+			cost = loss_fn(output, label_var)
 			assert not isnan(cost.cpu().data.numpy()),  "Gradient exploding, Loss = {}".format(cost.cpu().data.numpy())
 			losses.update(cost.cpu().data.numpy(), len(datas))
-			if (i+2)%5 == 0:
+			if i%2 == 0:
 				loss.append(losses())
 
 			# compute gradient and do SGD step
@@ -116,6 +113,8 @@ def train(train_loader, model, loss_fn, optimizer, epoch):
 			gc.collect()
 			t.set_postfix(loss='{:05.3f}'.format(losses()))
 			t.update()
+
+	save_TimeTrack_to_ini(args, datetime.now() - now, len(train_loader)) #save time used to evalutate loss function#
 	return loss
 	
 
@@ -139,7 +138,7 @@ def validate(val_loader, model, loss_fn):
 		output = model(input_var).double()
 		outputs[0] = np.concatenate((outputs[0], output.cpu().data.numpy().flatten()))
 		outputs[1] = np.concatenate((outputs[1], label_var.cpu().data.numpy().flatten()))
-		loss = loss_fn(output, label_var, (1, 1))
+		loss = loss_fn(output, label_var)
 		assert not isnan(loss.cpu().data.numpy()),  "Overshot loss, Loss = {}".format(loss.cpu().data.numpy())
 		# measure record cost
 		losses.update(loss.cpu().data.numpy(), len(datas))
@@ -168,18 +167,19 @@ def main():
 
 		for Testiter in range(params.CV_iters):
 			for CViter in range(params.CV_iters-1):
-				model.apply(model_loader.weight_ini)
-				logging.warning('Cross Validation on iteration {}/{}, Nested CV on {}/{}'.format(Testiter + 1, params.CV_iters, CViter + 1, params.CV_iters -1))
-				
-				if args.train:
-					save_loss_log(args, (Testiter,CViter), 
-							train_model(args, params, loss_fn, model, (Testiter,CViter), network))
-				evalmatices[network].append(save_ROC(	args, 
-								params.CV_iters, 
-								outputs = validate(	fetch_dataloader([], params), 
-											resume_model(args, model, (Testiter,CViter)), 
-											loss_fn)[1]))
-				get_next_CV_set(params.CV_iters)
+				if CViter !=0 or Testiter !=0:
+					model.apply(model_loader.weight_ini)
+					logging.warning('Cross Validation on iteration {}/{}, Nested CV on {}/{}'.format(Testiter + 1, params.CV_iters, CViter + 1, params.CV_iters -1))
+					
+					if args.train:
+						save_loss_log(args, (Testiter,CViter), 
+								train_model(args, params, loss_fn, model, (Testiter,CViter), network))
+					evalmatices[network].append(save_ROC(	args, 
+									params.CV_iters, 
+									outputs = validate(	fetch_dataloader([], params), 
+												resume_model(args, model, (Testiter,CViter)), 
+												loss_fn)[1]))
+					get_next_CV_set(params.CV_iters)
 
 		#add the AUC SD to the current model result
 		add_AUC_to_ROC(args, params.CV_iters, evalmatices[network])	

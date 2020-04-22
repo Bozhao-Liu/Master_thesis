@@ -43,6 +43,21 @@ def Exp_UEW_BCE_loss(outputs, labels, weights = (1, 1)):
 	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],1.0/(outputs[:, i]+epslon) - 1), weights[1]*torch.mul(1 - labels[:, i],1.0/(1 - outputs[:, i]+epslon)-1))) for i in range(outputs.shape[1])]
 	return torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
 
+def Exp_UEW_BCE_loss_BCE_balanced(outputs, labels, weights = (1, 1)):
+	'''
+	Cross entropy loss with uneven weigth between positive and negative result, add exponential function to positive to manually adjust precision and recall
+	'''
+	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],1.0/(outputs[:, i]+epslon) - 1), -weights[1]*torch.mul(1 - labels[:, i],torch.log(1 - outputs[:, i]+epslon)))) for i in range(outputs.shape[1])]
+	return torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
+
+def Exp_UEW_BCE_loss_focal_balanced(outputs, labels, gamma = 2):
+	'''
+	Cross entropy loss with uneven weigth between positive and negative result, add exponential function to positive to manually adjust precision and recall
+	'''
+	loss = [torch.sum(torch.add(	torch.mul(labels[:, i],1.0/(outputs[:, i]+epslon) - 1), 
+					-torch.mul(torch.pow(outputs[:, i], gamma), torch.mul(1 - labels[:, i], torch.log(1 - outputs[:, i]+epslon))))) for i in range(outputs.shape[1])]
+	return torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
+
 def Focal_loss(outputs, labels, gamma = (2, 2)):
 	loss = [torch.sum(torch.add(	torch.mul(torch.pow(1 - outputs[:, i], gamma[0]), torch.mul(labels[:, i], torch.log(outputs[:, i]+epslon))), 
 					torch.mul(torch.pow(outputs[:, i], gamma[1]), torch.mul(1 - labels[:, i], torch.log(1 - outputs[:, i]+epslon))))) for i in range(outputs.shape[1])]
@@ -52,17 +67,27 @@ def get_loss(loss_name):
 	loss_name = loss_name.lower()
 	if loss_name == 'bce':
 		return UnevenWeightBCE_loss
-	if loss_name == 'exp_bce': 
+	elif loss_name == 'exp_bce': 
         	return Exp_UEW_BCE_loss
 	elif loss_name == 'focal': 
         	return Focal_loss
+	elif loss_name == 'expbce_focal_balanced': 
+        	return Exp_UEW_BCE_loss_focal_balanced
+	elif loss_name == 'expbce_bce_balanced': 
+        	return Exp_UEW_BCE_loss_BCE_balanced
 	else:
 		logging.warning("No loss function with the name {} found, please check your spelling.".format(loss_name))
 		logging.warning("loss function List:")
 		logging.warning("    BCE")
 		logging.warning("    EXP_BCE")
 		logging.warning("    Focal")
+		logging.warning("    EXPBCE_Focal_Balanced")
+		logging.warning("    EXPBCE_BCE_Balanced")
+		import sys
 		sys.exit()
+
+def get_loss_list():
+	return ['BCE','EXP_BCE','Focal','EXPBCE_Focal_Balanced','EXPBCE_BCE_Balanced']
 
 def save_ROC(args, cv_iter, outputs):
 	ROC_png_file = os.path.join(args.model_dir, args.network)
@@ -104,6 +129,37 @@ def save_ROC(args, cv_iter, outputs):
 	plt.savefig(ROC_png_file)
 	return [AUC, best_F1, best_cutoff]
 
+def get_eval_matrix(args, cv_iter, outputs):
+	AUC = 0
+	TP_rates = []
+	FP_rates = []
+	FP_rate_pre = 1
+	TP_rate_pre = 1
+	best_F1 = 0
+	best_cutoff = 0
+	logging.warning('Creating ROC image for {} \n'.format(args.network))
+	for i in tqdm(np.linspace(0, 1, 51)):
+		results = outputs[0]>i
+		TP = np.sum((results+outputs[1])==2, dtype = float)
+		FN = np.sum(results<outputs[1], dtype = float)
+		TP_rate = TP/(TP + FN + 1e-10)  # recall
+		TP_rates.append(TP_rate)
+		FP = np.sum(results>outputs[1], dtype = float)
+		TN = np.sum((results+outputs[1])==0, dtype = float)
+		precision = TP/(TP + FP + 1e-10)
+		F1 = 2*precision*TP_rate/(precision+TP_rate + 1e-10)
+		if F1 > best_F1:
+			best_cutoff = i
+		best_F1 = max(best_F1, F1)
+
+		FP_rate = FP/(FP + TN + 1e-10)
+		FP_rates.append(FP_rate)
+		AUC += (TP_rate_pre+TP_rate)*(FP_rate_pre-FP_rate)/2.0
+		FP_rate_pre = FP_rate
+		TP_rate_pre = TP_rate
+		
+	return [AUC, best_F1, best_cutoff]
+
 def add_AUC_to_ROC(args, cv_iter, evalmatices):
 	ROC_png_file = os.path.join(args.model_dir, args.network)
 	ROC_png_file = os.path.join(ROC_png_file, '{network}_{loss}_CV{cv_iter}_ROC.PNG'.format(network = args.network, loss = args.loss, cv_iter = cv_iter))
@@ -119,7 +175,8 @@ def plot_learningCurve(args, CV_iters):
 	learningCurveFile = os.path.join(learningCurveFile, '{network}_{loss}_CV{cv_iter}_LearningCurve.PNG'.format(network = args.network, loss = args.loss, cv_iter = CV_iters))
 	for Testiter in range(CV_iters):
 		for CViter in range(CV_iters-1):
-			plt.plot(load_loss_log(args, (Testiter,CViter)))
+			if CViter !=0 or Testiter !=0:
+				plt.plot(load_loss_log(args, (Testiter,CViter)))
 	plt.ylabel('loss')
 	plt.xlabel('Epochs')
 	plt.title('{}_{} Learning Curve, {} fold'.format(args.network, args.loss, CV_iters))
@@ -144,7 +201,7 @@ def get_AUC(output):
 		TP_rate_pre = TP_rate
 	return output[0], AUC
 
-def plot_AUD_SD(loss, evalmatices, netlist):
+def plot_AUC_SD(loss, evalmatices, netlist):
 	logging.warning('    Creating standard diviation image for {}'.format('-'.join(netlist)))
 	AUC_png_file = 'Crossvalidation_Analysis_{}_{}.PNG'.format(loss, '_'.join(netlist))
 

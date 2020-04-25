@@ -1,4 +1,4 @@
-'''from mnist.loader import MNIST
+from mnist.loader import MNIST
 import random
 import numpy as np
 
@@ -9,7 +9,14 @@ features = features + images
 features = np.array(features)
 labels = labels + tlabels
 labels = np.reshape(np.array(labels),(-1,1))
+
+for i in range(50):
+	from PIL import Image
+	img = Image.fromarray(np.reshape(features[i].astype(np.uint8),(28,28)), 'L')
+	img.resize((256,256)).save('HD{}.png'.format(labels[i]))
+'''
 labels = labels == 8
+
 ones = np.array([i for i in range(labels.shape[0]) if labels[i]==1])
 np.random.shuffle(ones)
 ones = np.reshape(ones,(5, -1))
@@ -26,7 +33,8 @@ trainSet = np.concatenate((zeros[ind].flatten(), ones[ind].flatten())).flatten()
 print(trainSet.shape)
 from PIL import Image
 img = Image.fromarray(np.reshape(features[trainSet[79]].astype(np.uint8),(28,28)), 'L')
-img.show()
+img.resize((256,256)).show()
+
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
@@ -39,14 +47,5 @@ print(img.size())
 img = resize2d(img, (224,224))
 print(img.size())'''
 
-import numpy as np
-
-
-
-original_array = np.loadtxt("test.txt")
-
-import matplotlib.pyplot as plt
-plt.plot(original_array)
-plt.show()
 	
 

@@ -223,7 +223,7 @@ def save_loss_log(args, CViter, data):
 	if not os.path.isdir(loss_log):
 		os.mkdir(loss_log)
 	loss_log = os.path.join(loss_log, '{network}_{loss}_{cv_iter}.txt'.format(network = args.network, loss = args.loss, cv_iter = '_'.join(tuple(map(str, CViter)))))
-	if os.path.isfile(loss_log):
+	if os.path.isfile(loss_log) and not args.resume:
 		os.remove(loss_log)
 	with open(loss_log, "w") as log_file:
     		np.savetxt(log_file, data)

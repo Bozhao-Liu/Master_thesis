@@ -201,9 +201,9 @@ def get_AUC(output):
 		TP_rate_pre = TP_rate
 	return output[0], AUC
 
-def plot_AUC_SD(loss, evalmatices, netlist):
+def plot_AUC_SD(loss, evalmatices, netlist, lrd):
 	logging.warning('    Creating standard diviation image for {}'.format('-'.join(netlist)))
-	AUC_png_file = 'Crossvalidation_Analysis_{}_{}.PNG'.format(loss, '_'.join(netlist))
+	AUC_png_file = 'Crossvalidation_Analysis_{}_{}_{}LrD.PNG'.format(loss, '_'.join(netlist), str(lrd))
 
 	if len(netlist) == 0:
 		return

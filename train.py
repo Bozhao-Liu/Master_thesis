@@ -30,7 +30,7 @@ parser.add_argument('--train', default = False, type=str2bool,
 			help="specify whether train the model or not (default: False)")
 parser.add_argument('--model_dir', default='Model', 
 			help="Directory containing params.json")
-parser.add_argument('--resume', default = True, type=str2bool, 
+parser.add_argument('--resume', default = False, type=str2bool, 
 			help='path to latest checkpoint (default: True)')
 parser.add_argument('--network', type=str, default = '',
 			help='select network to train on. leave it blank means train on all model')
@@ -195,7 +195,7 @@ def main():
 		plot_learningCurve(args, params.CV_iters)
 		Store_AUC_to_ini(args, evalmatices[network])
 	
-	plot_AUC_SD(args.loss, evalmatices, netlist)
+	plot_AUC_SD(args.loss, evalmatices, netlist, args.lrDecay)
 
 		
 if __name__ == '__main__':

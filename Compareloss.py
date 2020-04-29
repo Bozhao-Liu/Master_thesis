@@ -93,14 +93,12 @@ def main():
 					model.apply(model_loader.weight_ini)
 					logging.warning('Cross Validation on iteration {}/{}, Nested CV on {}/{}'.format(Testiter + 1, params.CV_iters, CViter + 1, params.CV_iters -1))
 					
-					evalmatices[loss].append(get_eval_matrix(	args, 
-									params.CV_iters, 
-									outputs = validate(	fetch_dataloader([], params), 
-												resume_model(args, model, (Testiter,CViter)), 
+					evalmatices[loss].append(get_eval_matrix(outputs = validate(	fetch_dataloader([], params), 
+												resume_model(args, model, 														(Testiter,CViter)), 
 												loss_fn)[1]))
-					get_next_CV_set(params.CV_iters)
+				get_next_CV_set(params.CV_iters)
 	
-	plot_AUC_SD(args.network, evalmatices, loss_list)
+	plot_AUC_SD(args.network, evalmatices, loss_list, args.lrDecay)
 
 		
 if __name__ == '__main__':

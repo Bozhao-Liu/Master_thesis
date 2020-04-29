@@ -38,7 +38,7 @@ parser.add_argument('--loss', type=str, default = 'BCE',
 			help='select loss function to train with. ')
 parser.add_argument('--log', default='warning', type=str,
 			help='set logging level')
-parser.add_argument('--lrDecay', default=0.8, type=float,
+parser.add_argument('--lrDecay', default=1.0, type=float,
 			help='learning rate decay rate')
 
 
@@ -105,7 +105,7 @@ def train(args, train_loader, model, loss_fn, optimizer, epoch):
 			output = model(input_var).double()
 
 			# measure record cost
-			cost = loss_fn(output, label_var)
+			cost = loss_fn(output, label_var, gamma = 1.5)
 			assert not isnan(cost.cpu().data.numpy()),  "Gradient exploding, Loss = {}".format(cost.cpu().data.numpy())
 			losses.update(cost.cpu().data.numpy(), len(datas))
 			if i%2 == 0:
@@ -145,7 +145,7 @@ def validate(val_loader, model, loss_fn):
 		output = model(input_var).double()
 		outputs[0] = np.concatenate((outputs[0], output.cpu().data.numpy().flatten()))
 		outputs[1] = np.concatenate((outputs[1], label_var.cpu().data.numpy().flatten()))
-		loss = loss_fn(output, label_var)
+		loss = loss_fn(output, label_var, gamma = 1.5)
 		assert not isnan(loss.cpu().data.numpy()),  "Overshot loss, Loss = {}".format(loss.cpu().data.numpy())
 		# measure record cost
 		losses.update(loss.cpu().data.numpy(), len(datas))
@@ -188,7 +188,7 @@ def main():
 									outputs = validate(	fetch_dataloader([], params), 
 												resume_model(args, model, (Testiter,CViter)), 
 												loss_fn)[1]))
-					get_next_CV_set(params.CV_iters)
+				get_next_CV_set(params.CV_iters)
 
 		#add the AUC SD to the current model result
 		add_AUC_to_ROC(args, params.CV_iters, evalmatices[network])	

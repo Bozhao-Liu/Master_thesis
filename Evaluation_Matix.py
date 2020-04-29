@@ -34,7 +34,7 @@ def UnevenWeightBCE_loss(outputs, labels, weights = (1, 1)):
 	Cross entropy loss with uneven weigth between positive and negative result to manually adjust precision and recall
 	'''
 	loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],torch.log(outputs[:, i]+epslon)), weights[1]*torch.mul(1 - labels[:, i],torch.log(1 - outputs[:, i]+epslon)))) for i in range(outputs.shape[1])]
-	return torch.neg(torch.stack(loss, dim=0).sum(dim=0).sum(dim=0))
+	return -torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
 
 def Exp_UEW_BCE_loss(outputs, labels, weights = (1, 1)):
 	'''
@@ -129,7 +129,7 @@ def save_ROC(args, cv_iter, outputs):
 	plt.savefig(ROC_png_file)
 	return [AUC, best_F1, best_cutoff]
 
-def get_eval_matrix(args, cv_iter, outputs):
+def get_eval_matrix(outputs):
 	AUC = 0
 	TP_rates = []
 	FP_rates = []
@@ -137,7 +137,6 @@ def get_eval_matrix(args, cv_iter, outputs):
 	TP_rate_pre = 1
 	best_F1 = 0
 	best_cutoff = 0
-	logging.warning('Creating ROC image for {} \n'.format(args.network))
 	for i in tqdm(np.linspace(0, 1, 51)):
 		results = outputs[0]>i
 		TP = np.sum((results+outputs[1])==2, dtype = float)

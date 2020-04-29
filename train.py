@@ -105,7 +105,7 @@ def train(args, train_loader, model, loss_fn, optimizer, epoch):
 			output = model(input_var).double()
 
 			# measure record cost
-			cost = loss_fn(output, label_var, gamma = 1.5)
+			cost = loss_fn(output, label_var)
 			assert not isnan(cost.cpu().data.numpy()),  "Gradient exploding, Loss = {}".format(cost.cpu().data.numpy())
 			losses.update(cost.cpu().data.numpy(), len(datas))
 			if i%2 == 0:
@@ -145,7 +145,7 @@ def validate(val_loader, model, loss_fn):
 		output = model(input_var).double()
 		outputs[0] = np.concatenate((outputs[0], output.cpu().data.numpy().flatten()))
 		outputs[1] = np.concatenate((outputs[1], label_var.cpu().data.numpy().flatten()))
-		loss = loss_fn(output, label_var, gamma = 1.5)
+		loss = loss_fn(output, label_var)
 		assert not isnan(loss.cpu().data.numpy()),  "Overshot loss, Loss = {}".format(loss.cpu().data.numpy())
 		# measure record cost
 		losses.update(loss.cpu().data.numpy(), len(datas))

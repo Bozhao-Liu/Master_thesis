@@ -161,14 +161,17 @@ def load_f1_log(args, CViter):
 
 def plot_F1learningCurve(args, CV_iters):
 	learningCurveFile = os.path.join(args.model_dir, args.network)
-	learningCurveFile = os.path.join(learningCurveFile, '{network}_CV{cv_iter}_F1LearningCurve.PNG'.format(network = args.network, cv_iter = 5))
-	plt.plot(load_f1_log(args, CV_iters))
+	learningCurveFile = os.path.join(learningCurveFile, '{network}-CV{cv_iter}-F1LearningCurve4.PNG'.format(network = args.network, cv_iter = 5))
+	data = load_f1_log(args, CV_iters)
+	
+	plt.plot(range(int(len(data)/10+len(data)/2),len(data)),data[int(len(data)/10+len(data)/2):])
 	plt.legend(get_loss_list())
 	plt.ylabel('F1')
 	plt.xlabel('Epochs')
 	plt.title('{} F1Learning Curve, {} fold'.format(args.network,  5))
 	logging.warning('    Saving Learning Curve to {}\n'.format(learningCurveFile))
 	plt.savefig(learningCurveFile)
+	print(int(len(data)/10),int(len(data)/5),int(len(data)/10+len(data)/2),len(data))
 
 def main():
 	args = parser.parse_args()

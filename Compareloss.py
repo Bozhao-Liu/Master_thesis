@@ -32,7 +32,7 @@ parser.add_argument('--network', type=str, default = '',
 			help='select network to train on. leave it blank means train on all model')
 parser.add_argument('--log', default='warning', type=str,
 			help='set logging level')
-parser.add_argument('--lrDecay', default=0.8, type=float,
+parser.add_argument('--lrDecay', default=1, type=float,
 			help='learning rate decay rate')
 
 	
@@ -83,6 +83,7 @@ def main():
 
 	cudnn.benchmark = True
 	for loss in loss_list:
+		print(loss)
 		args.loss = loss
 		loss_fn = get_loss(loss)
 		if args.lrDecay != 1.0:

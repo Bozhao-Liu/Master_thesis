@@ -38,6 +38,8 @@ parser.add_argument('--loss', type=str, default = 'BCE',
 			help='select loss function to train with. ')
 parser.add_argument('--log', default='warning', type=str,
 			help='set logging level')
+parser.add_argument('--storebest', default = True, type=str2bool, 
+			help='path to latest checkpoint (default: False)')
 parser.add_argument('--lrDecay', default=1.0, type=float,
 			help='learning rate decay rate')
 
@@ -59,14 +61,14 @@ def train_model(args, params, loss_fn, model, CViter, network):
 	for epoch in range(start_epoch, start_epoch + params.epochs):
 		logging.warning('CV [{}/{},{}/{}], Training Epoch: [{}/{}]'.format(CViter[1] + 1, params.CV_iters-1, CViter[0] + 1, params.CV_iters, epoch+1, start_epoch + params.epochs))
 
-		loss_track = loss_track + train(args, dataloaders['train'], model, loss_fn, optimizer, epoch) #keep track of training loss
+		loss_track = loss_track + train(args, dataloaders, model, loss_fn, optimizer, params.epochs) #keep track of training loss
 
 		# evaluate on validation set
 		val_loss, AUC = get_AUC(validate(dataloaders['val'], model, loss_fn))
 		logging.warning('    Loss {loss:.4f};  AUC {AUC:.4f}\n'.format(loss=val_loss, AUC=AUC))
 
 		# remember best loss and save checkpoint		
-		if best_AUC < AUC:
+		if best_AUC < AUC and args.storebest:
 			logging.warning('    Saving Best AUC model\n')
 			save_checkpoint({
 				'epoch': epoch + 1,
@@ -85,15 +87,16 @@ def learning_rate_decay(optimizer, decay_rate):
         param_group['lr'] = param_group['lr'] * decay_rate
 	
 
-def train(args, train_loader, model, loss_fn, optimizer, epoch):
+def train(args, dataloaders, model, loss_fn, optimizer, epoch):
 	losses = AverageMeter()
 
 	# switch to train mode
 	model.train()
 	loss = []
 	now = datetime.now()
-	with tqdm(total=len(train_loader)) as t:
-		for i, (datas, label) in enumerate(train_loader):
+	with tqdm(total=len(dataloaders['train'])) as t:
+		for i, (datas, label) in enumerate(dataloaders['train']):
+			model.train()
 			logging.info("    Sample {}:".format(i))
 
 			logging.info("        Loading Varable")
@@ -108,8 +111,11 @@ def train(args, train_loader, model, loss_fn, optimizer, epoch):
 			cost = loss_fn(output, label_var)
 			assert not isnan(cost.cpu().data.numpy()),  "Gradient exploding, Loss = {}".format(cost.cpu().data.numpy())
 			losses.update(cost.cpu().data.numpy(), len(datas))
-			if i%2 == 0:
-				loss.append(losses())
+			del input_var
+			del label_var
+			del output
+			#if i%int(len(dataloaders['train'])*epoch/40) == 0:
+			#	loss.append(get_AUC(validate(dataloaders['val'], model, loss_fn))[1])
 
 			# compute gradient and do SGD step
 			logging.info("        Compute gradient and do SGD step")
@@ -121,7 +127,7 @@ def train(args, train_loader, model, loss_fn, optimizer, epoch):
 			t.set_postfix(loss='{:05.3f}'.format(losses()))
 			t.update()
 
-	save_TimeTrack_to_ini(args, datetime.now() - now, len(train_loader)) #save time used to evalutate loss function#
+	save_TimeTrack_to_ini(args, datetime.now() - now, len(dataloaders['train'])) #save time used to evalutate loss function#
 	return loss
 	
 
@@ -149,6 +155,8 @@ def validate(val_loader, model, loss_fn):
 		assert not isnan(loss.cpu().data.numpy()),  "Overshot loss, Loss = {}".format(loss.cpu().data.numpy())
 		# measure record cost
 		losses.update(loss.cpu().data.numpy(), len(datas))
+		del input_var
+		del label_var
 	
 	return losses(), outputs
 
@@ -183,19 +191,18 @@ def main():
 					if args.train:
 						save_loss_log(args, (Testiter,CViter), 
 								train_model(args, params, loss_fn, model, (Testiter,CViter), network))
-					evalmatices[network].append(save_ROC(	args, 
+					'''evalmatices[network].append(save_ROC(	args, 
 									params.CV_iters, 
 									outputs = validate(	fetch_dataloader([], params), 
 												resume_model(args, model, (Testiter,CViter)), 
-												loss_fn)[1]))
+												loss_fn)[1]))'''
 				get_next_CV_set(params.CV_iters)
 
 		#add the AUC SD to the current model result
-		add_AUC_to_ROC(args, params.CV_iters, evalmatices[network])	
-		plot_learningCurve(args, params.CV_iters)
-		Store_AUC_to_ini(args, evalmatices[network])
+		#add_AUC_to_ROC(args, params.CV_iters, evalmatices[network])	
+		#Store_AUC_to_ini(args, evalmatices[network])
 	
-	plot_AUC_SD(args.loss, evalmatices, netlist, args.lrDecay)
+	#plot_AUC_SD(args.loss, evalmatices, netlist, args.lrDecay)
 
 		
 if __name__ == '__main__':

@@ -9,13 +9,14 @@ y_pos = 1/x-1
 y_neg = - np.log(1-x)
 fig, ax = plt.subplots()
 
-ax.plot(x, y_pos, label=r'$\frac{1}{\hat{y}_i}-1)$', lw=2)
+ax.plot(x, y_pos, label=r'$\frac{1}{\hat{y}_i}-1$', lw=2)
 ax.plot(x, y_neg, label=r'$-log(1-\hat{y}_i)$', lw=2)
 
-ax.set(xlim=[-0.05, 1.05], title='B-EXP_BCE theoretical learning curve')
-ax.legend(loc='upper right')	
-ax.set_xlabel('$\hat{y}_i$')
-ax.set_ylabel('loss')
+ax.set(xlim=[-0.05, 1.05], ylim =[-1,30])
+ax.set_title('B-EXP_BCE theoretical learning curve', fontsize = 'x-large')
+ax.legend(loc='upper right', fontsize = 'x-large')	
+ax.set_xlabel('$\hat{y}_i$', fontsize = 'x-large')
+ax.set_ylabel('loss', fontsize = 'x-large')
 LC_png_file = 'expcebce.png'
 plt.savefig(LC_png_file)
 

@@ -237,10 +237,11 @@ def plot_learningCurve(args, CV_iters):
 		tprs_lower = np.maximum(mean_loss - std_loss, 0)[:int(1001/dev)]
 		ax.fill_between(mean_Epoch[:int(1001/dev)], tprs_lower, tprs_upper, color = color[loss], alpha=.2)
 			
-	ax.set_ylabel('AUC')
-	ax.set_xlabel('Epochs')
-	ax.legend(loc="lower right")
-	ax.set(xlim=[-0.2, min_len/dev-1], title='{} Learning Curve, {} fold 1/{}'.format(args.network, CV_iters, dev))
+	ax.set_ylabel('AUC', fontsize = 'x-large')
+	ax.set_xlabel('Epochs', fontsize = 'x-large')
+	ax.legend(loc="lower right", fontsize = 'x-large')
+	ax.set(xlim=[-0.2, min_len/dev-1])
+	ax.set_title('{} Learning Curve, {} fold 1/{}'.format(args.network, CV_iters, dev), fontsize = 'x-large')
 	logging.warning('    Saving Learning Curve to {}\n'.format(learningCurveFile))
 	plt.savefig(learningCurveFile)
 

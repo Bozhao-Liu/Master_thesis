@@ -12,10 +12,11 @@ fig, ax = plt.subplots()
 ax.plot(x, y_BCE, label=r'BCE gradient ($-\frac{1}{\hat{y}_i}$)', lw=2)
 ax.plot(x, y_FL, label=r'Focal loss gradient ($2(1-\hat{y}_i)log(\hat{y}_i)-\frac{(1-\hat{y}_i)^2}{\hat{y}_i}$)', lw=2)
 
-ax.set(xlim=[-0.05, 1.05], title='Focal loss, BCE gradient Comparison')
-ax.legend(loc='lower right')	
-ax.set_xlabel('$\hat{y}_i$')
-ax.set_ylabel('loss')
+ax.set(xlim=[-0.05, 1.05], ylim=[-40,1])
+ax.set_title('Focal loss, BCE gradient Comparison', fontsize = 'x-large')
+ax.legend(loc='lower right', fontsize = 'large')	
+ax.set_xlabel('$\hat{y}_i$', fontsize = 'x-large')
+ax.set_ylabel('loss', fontsize = 'x-large')
 Grad_png_file = 'FLgradvsBCEgrad.png'
 plt.savefig(Grad_png_file)
 
